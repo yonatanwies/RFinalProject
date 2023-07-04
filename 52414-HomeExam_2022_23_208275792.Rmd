@@ -1,0 +1,396 @@
+---
+
+title: '52414, 2022-23: Home Exam'
+
+output:
+
+  html_document: default
+
+  pdf_document: default
+
+date: "July 2nd, 2023"
+
+---
+
+
+
+
+
+### Submission Instructions (Please read carefully)   
+
+
+
+The exam will be submitted **individually** by uploading the solved exam `Rmd` and `html` files to the course `moodle`. 
+
+Please name your files as `52414-HomeExam_2022_23_ID.Rmd` and `52414-HomeExam_2022_23_ID.html` where `ID` is replaced by your ID number (do **not** write your **name** in the file name or in the exam itself).
+
+
+
+**Grading:** There are $2$ questions with overall $10$ sub-questions. Each sub-question is worth $10$ points for the exam grade. 
+
+
+
+Once you click on the `moodle` link for the home exam, the exam will start and you have three days (72 hours) to complete and submit it. 
+
+The exam will be available from July 2nd, at 9am. The last submission time is July 7th at 5pm. <br>
+
+You may use all course materials, the web and other written materials and R libraries. 
+
+You are NOT allowed to discuss any of the exam questions/materials with other students. 
+
+
+
+
+
+**Analysis and Presentation of Results:**
+
+
+
+Write your answers and explanations in the text of the `Rmd` file (*not* in the `code`). <br>
+
+The text of your answers should be next to the relevant code, plots and tables and refer to them, and not at a separate place at the end. <br>
+
+You need to explain every step of your analysis. When in doubt, a more detailed explanation is better than omitting explanations. 
+
+
+
+Give informative titles, axis names and names for each curve/bar in your graphs. 
+
+In some graphs you may need to change the graph limits. If you do so, please include the outlier points you have removed in a separate table.  <br>
+
+Add informative comments explaining your code <br>
+
+
+
+Whenever possible, use **objective** and **specific** terms and quantities learned in class, and avoid **subjective** and **general** non-quantified statements. For example: <br>
+
+`Good:` "We see a $2.5$-fold increase in the curve from Jan. 1st to March 1st". <br>
+
+`Bad:` "The curve goes up at the beginning". <br>
+
+`Good:` "The median is $4.7$. We detected five outliers with distance $>3$ standard deviations from the median". <br>
+
+`Bad:` "The five points on the sides seem far from the middle". 
+
+
+
+Sometimes `Tables` are the best way to present your results (e.g. when asked for a list of items). Exclude irrelevant
+
+rows/columns. Display clearly items' names in your `Tables`.
+
+
+
+Show numbers in plots/tables using standard digits and not scientific display. 
+
+That is: 90000000 and not 9e+06.  
+
+Round numbers to at most 3 digits after the dot - that is, 9.456 and not 9.45581451044
+
+
+
+Some questions may require data wrangling and manipulation which you need to 
+
+decide on. The instructions may not specify precisely the exact plot you should use
+
+(for example: `show the distribution of ...`). In such cases, you should decide what and how to show the results. 
+
+
+
+When analyzing real data, use your best judgment if you encounter missing values, negative values, NaNs, errors in the data etc. (e.g. excluding them, zeroing negative values..) and mention what you have done in your analysis in such cases. 
+
+
+
+Required libraries are called in the `Rmd` file. Install any library missing from your `R` environment. You are allowed to add additional libraries if you want. 
+
+If you do so, **add them at the start of the Rmd file, right below the existing libraries, and explain what libraries you've added, and what is each new library used for**. 
+
+
+
+This is an .Rmd file. Copy it with your mouse to create and Rmd file, and edit the file to include your questions.
+
+
+
+
+
+
+
+Good luck!
+
+
+
+##############################################################################
+
+```{r, echo = FALSE, results = 'hide', warning=FALSE, message=FALSE}
+
+library(maps)
+
+library(tidyverse)
+
+library(rvest)  # for html
+
+library(uniformly) # for sampling uniformly from the sphere 
+
+library(lubridate)  # for parsing time 
+
+library(e1071) # skewness and kurtosis
+
+library(maditr)
+
+library(data.table)
+
+library(caTools)
+####
+library(gtools)
+
+
+
+options(scipen=999)
+
+```
+
+
+
+
+
+<br/><br/>
+
+
+
+
+
+## Q1. Random permutations   
+
+
+
+![](https://miro.medium.com/v2/resize:fit:4800/format:webp/1*C8JOlHLv6F7IMD0vT3yDSg@2x.png)
+
+
+
+In this question we study some properties of random **permutations**. A permutation of $n$ elements is a vector $v \in \{1,2,..,n\}^n$ such that $\forall i \neq j$ also $v(i) \neq v(j)$. For example, the vector $v = (3,4,1,5,2)$ is a permutation of $5$ elements. 
+
+The set of permutations on $n$ elements is denoted $S_n$, and has size $|S_n|  = n!$. We consider here radnom sampling of permutation, i.e. a uniform distribution over all $n!$ permutations, where the probability of each permutation being chosen is $\frac{1}{n!}$.
+
+
+
+
+
+a. (Confused secretary Problem): 
+
+A secretary has $n$ letters and $n$ envelopes with addresses written on them. 
+
+The secretary mixes the letters and puts each letter in a *random* envelope. 
+
+Estimate the probability that *no* letter was sent to the correct address for $n=100$, by running $10,000$ simulations of this process. 
+```{r}
+sample <- 10000
+n <- 100
+confused_secretary <- function(n){
+  envelopes<-rep(0,times=n)
+  correct_assignment<-rep(0,times=n)
+  positions <- sample(1:n)  # Randomly select a position
+  for(i in 1:n){
+  envelopes[i] <- positions[i]
+  correct_assignment[i] <- i == positions[i]
+  }
+  false_count <- sum(!correct_assignment)
+  if (false_count == n) {
+    return(1) # returns 1 if all the assigments are false
+  }
+    return(0) # return 0 else
+}
+outcome <- list()
+for (i in 1:sample) { # sample 10,000 times
+  result <- confused_secretary(n)
+  outcome[[i]] <- result
+}
+mean(unlist(outcome)) 
+
+```
+
+
+b. For a permutation $v \in S_n$,  a cycle of length $k$ is a vector of integers $(a_1, a_2, a_3, a_4, .., a_k)$ such that $v(a_1) = a_2, v(a_2) = a_3, .., v(a_{k-1})=a_k$ and $v(a_k) = 1$. For example, for the permutation $v = (3,4,1,5,2)$ we have the cycle $(1,3)$ of length $2$ because $v(1) = 3$ and $v(3) = 1$. We also have the cycle $(2,4,5)$ of length $3$, because $v(2) = 4, v(4) = 5$ and $v(5)=2$. See also another example of the cycles of a permutation in the figure above.  <br>
+
+Let $X_k$ be the number of cycles of length $k$ in a random permutation of length $n$ selected uniformly from $S_n$.  
+
+Estimate $E[X_k]$ for any $k=1,2,..,n$ for $n=100$ and $10,000$ simulations. 
+
+Plot your estimates $\hat{E}[X_k]$ as a function of the cycle length $k$.  <br>
+
+Next, perform a log transformation to the estimates and plot $log(\hat{E}[X_k])$ vs. $log(k)$. 
+
+Fit a simple linear regression model to the log-transformed data add the regression line to the plot. 
+
+Use the fitted model to deduce a formula for the expectation, i.e. a function $g(k)$ such that $E[X_k] = g(k)$. 
+
+
+```{r}
+#I added library(gtools) to use function "permutations"
+n<-4
+perms <- permutations(n, n)
+
+```
+c. For a random permutation of length $n=100$, Let $p_{12}$ be the probability that the values $1$ and $2$ are in the same cycle.
+
+Estimate this probability using $10,000$ simulations. 
+
+Denote your estimator by $\hat{p}_{12}$. Estimate also the standard deviation of your estimator, 
+
+i.e. provide and estimate $\hat{\sigma}(\hat{p}_{12})$ of $\sigma(\hat{p}_{12})$.
+
+
+
+
+
+d. Suppose that Alice and Bob play poker with a deck of only $13$ cards numbered $1,2,..,13$ (all from the same symbol), 
+
+and each of them draw $5$ different cards at random (with $3$ cards remaining in the deck). 
+
+Let $A$ be the event that Alice gets a `straight` hand (i.e. $5$ consecutive numbers on her cards).
+
+Estimate the probability $p_A \equiv P(A)$, this time using $100,000$ simulations. <br>
+
+Let $B$ be the event that Bob gets a `straight` hand.
+
+Suppose now that we know that Alice got a `straight` hand. Let $p_{B|A} = P(B|A)$ be the conditional probability that Bob also got a `straight` hand given this knowledge.  
+
+Estimate this probability using $100,000$ simulations and the method of **rejection sampling**. Is $\hat{p}_{B|A}$ higher or lower than $\hat{p}_A$? Explain <br>
+
+Next, report the fraction of the samples you have rejected.  
+
+Estimate the standard deviations of your two estimators. 
+
+Is $\hat{\sigma}(\hat{p}_{B|A})$ higher or lower than $\hat{\sigma}(\hat{p}_A)$? Explain
+
+
+
+
+
+
+
+**Solutions: QU. 1**
+```{r}
+
+
+```
+
+
+[Write your code and text explanations here]
+
+
+
+
+
+
+
+## Q2. Analysis and Visualization of the COVID-19 Data
+
+![](https://cdn.who.int/media/images/default-source/mca/mca-covid-19/coronavirus-2.tmb-1920v.jpg?sfvrsn=4dba955c_12)
+
+
+
+In this question we compare and visualize the trends in terms of numbers of COVID-19 `cases` and `deaths` for different world countries during the pandemic. 
+
+
+
+a. Read the COVID-19 dataset file `WHO-COVID-19-global-data.csv` from the [World's Health Organization](https://covid19.who.int/?gclid=Cj0KCQjwudb3BRC9ARIsAEa-vUuF5yzpzQUOyxXJvgsXDE6koerrpqO7go0BPBTylJbYh_fPSaYaMWUaAhNlEALw_wcB) webpage into an $R$ data-frame.
+
+See the link `Data` and then `Data Download` that transfers you to the page with the data and explanations on the data [here](https://covid19.who.int/data). <br>
+
+The data represents the daily number of cases and deaths from COVID19 in different world countries, from the start of the pandemic at $2020$ until the current date <br>
+
+Change the name of the column representing the date to `Date`. Make sure that this column represents only the date and set it to 'date' type. For example, the first element in the 'Date' column should be "2020-01-03". <br>
+
+Show the head and tail of the resulting data-frame. 
+
+
+
+
+
+b. In this sub-question and the next one, we're interested in plotting the COVID-19 trends in `Israel` and its neighbors. 
+
+Extract as candidate neighbors all countries with `WHO_region = EMRO`. Add `Israel` and other neighbor countries that you notice are missing, and remove far away countries (e.g. `Afghanistan`, `Djibouti`). Use your best judgment in selecting which additional countries to remove, and keep the total number of neighbor countries at below $15$. <br>
+
+Replace long country names with meaningful short names for better readability and graph appearance. 
+
+For example, if `Venezuela (Bolivarian Republic of)` was one of our neighbors, we would have replaced it by `Venezuela`. <br>
+
+Next, plot the `cumulative` number of `cases` as a function of the `Date` for these countries (one plot, a different curve per each country). 
+
+Repeat and show in a different plot the `cumulative` number of `deaths` for each of these countries. 
+
+
+
+
+
+
+
+c. Load the economic dataset available in moodle in the file `economic_data.csv` with demographic and economic information on world countries. 
+
+Merge the two data-frames such that the new data-frame will keep the information in the COVID-19 data-frame, yet will also contain for each row the total population of each country in $2018$. 
+
+Manually rename country names that do not match between the two datasets - you don't have to change all names, but focus on including countries that come up in the analysis of 
+
+(b.) and of the next sub-questions. <br>
+
+Create four new columns, respectively representing the number of *cumulative* `cases` and `deaths` per one million people, and the number of *new* daily `cases` and `deaths` per one million people, for each country and date. <br>
+
+For the same countries used in (b.), plot in two separate figures
+
+the *log-scaled* `cumulative` number of `cases` and `deaths` per million, as a function of the Date. <br>
+
+Which countries suffered the most from the pandemic based on these plots? how did Israel do compared to its neighbors?
+
+
+
+d. One measure of the healthcare system strength in a country is the ratio between the number of deaths and the number of cases (with the caveats that this number is affected by other things like
+
+the population age-structure, the fact that testing and diagnosing cases are different between countries etc.). <br> 
+
+Extract for *all* countries the latest reported cumulative number of `cases per million` and `deaths per million` per country (it is recommended to create a new data-frame with one row per country), and make a scatter-plot comparing the two shown on a `log-scale`.  
+
+Fit a linear regression line to the log-scaled data. <br>
+
+Define the `fatality rate` as the ratio between the latest reported cumulative numbers of `deaths` and `cases`, i.e. an estimate of the probability that an infected individual died form the disease. Display the distribution of `fatality rate` across countries using a plotting method of your choice. Describe the distribution: what is the mean/median? is it symmetric? skewed? are there outlier countries? which ones?
+
+
+
+
+
+e. Find the countries suffering the highest number of deaths by COVID-19, i.e. those with $>200,000$ cumulative number of `deaths`.
+
+For these countries, plot the `smoothed` number of `new` daily cases. 
+
+You can use the `geom_smooth` function. <br>
+
+Describe the different qualitative behaviors of the curves of the different countries. 
+
+Which countries were hit earliest/latest by the pandemic? 
+
+Is there a different in the number of waves suffered by each country? 
+
+
+
+
+
+
+
+f. Plot the new  number of `cases` and `death` as a function of the date in each of the six `WHO_regions`: `EMRO`,  `EURO`,  `AFRO`,  `WPRO`,  `AMRO`,  `SEARO` (filter `Others`), in two separate plots (each region in a different color). Describe the results. <br>
+
+Create a new column representing `GDP per capita` for each country. Then, plot the empirical CDF of the `GDP per capita` and the 
+
+percent of population above $65$ (`pop65`) in each of the six `WHO_regions`, in two separate plots (each region in a different color). Describe the results.
+
+
+
+
+
+
+
+
+
+**Solutions: QU. 2**
+
+
+
+[Write your code and text explanations here]
+
