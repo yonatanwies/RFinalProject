@@ -225,10 +225,80 @@ Use the fitted model to deduce a formula for the expectation, i.e. a function $g
 
 ```{r}
 #I added library(gtools) to use function "permutations"
-n<-4
-perms <- permutations(n, n)
+find_cycles <- function(perm, k){
+  X <- order(perm, decreasing = FALSE)
+  res <- vector("list")
+  for(i in X){
+    temp <- c(i)
+    if(k==1){
+      if(perm[i] == i){
+        res[i] <- temp
+        next
+      }
+      }
+    start <- i
+    cur <- perm[i]
+    while(cur != start){
+      temp <- c(temp, cur)
+      cur <- perm[cur]
+    }
+  if(length(temp)==k){
+    res[[i]]<- temp
+  }
+  res <- res[!sapply(res, is.null)]  # Remove NULL entries
+
+  
+  return(res)
+  }}
+res <- find_cycles(c(3,4,1,5,2),2)
+res
+# Remove duplicate lists
+unique_res <- res[!duplicated(sapply(res, toString))]
+
+# Print the unique lists
+for (lst in unique_res) {
+  print(lst)
+}
+find_cycles(c(3,4,1,5,2),3)
+```
+
+
+
+
+
+
+
+
+```{r}
+find_all_cycles<-function(perm,k){
+  result<-c()
+  X<- order(perm,decreasing = FALSE)
+  for(i in X){
+    temp<-c(i)
+    if(k==1){
+      if(perm[i]==i){
+        result<-append(result,temp)
+      }  
+    }
+    start <- i
+    cur <- perm[i]
+    while(cur!=start){
+      temp<-append(temp,i)
+      cur <- perm[cur]
+      
+    }
+    if(length(temp)==k){
+      if(!any(sapply(result, function(x) all(x %in% temp)))){
+      result <- append(result,temp)
+      }
+    }
+  }
+  return(result)  
+}
+find_all_cycles(c(3,4,1,5,2),3)
 
 ```
+
 c. For a random permutation of length $n=100$, Let $p_{12}$ be the probability that the values $1$ and $2$ are in the same cycle.
 
 Estimate this probability using $10,000$ simulations. 
