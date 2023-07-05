@@ -142,7 +142,7 @@ library(caTools)
 ####
 library(gtools)
 library(ggplot2)
-
+library(dyplr)
 
 options(scipen=999)
 
@@ -309,30 +309,22 @@ Denote your estimator by $\hat{p}_{12}$. Estimate also the standard deviation of
 i.e. provide and estimate $\hat{\sigma}(\hat{p}_{12})$ of $\sigma(\hat{p}_{12})$.
 
 ```{r}
-find_probability_p12 <- function(perm) {
-  cycles <- find_all_cycles(perm)
-  
-  # Check if 1 and 2 are in the same cycle
-  same_cycle<- (1 %in% cycles && 2 %in% cycles)  
-  if (same_cycle) {
-    return(1)
-  } else {
-    return(0)
+n <- 100
+simulations <- 10000
+count <- 0
+p12_values <- numeric(simulations)
+
+for (i in 1:simulations) {
+  perm <- sample(n)
+  if (1 %in% find_all_cycles(perm) && 2 %in% find_all_cycles(perm)) {
+    count <- count + 1
   }
 }
 
-# Perform 10,000 simulations
-n <- 100
-simulations <- 10000
-sample_permutations <- replicate(simulations, sample(n))
-
-# Estimate probability p12
-p12 <- mean(sapply(sample_permutations, find_probability_p12))
+p12 <- count / simulations
 p12
-
-
-
-
+std_dev <- sqrt(sum((p12_values - p12)^2) / (simulations - 1))
+std_dev
 
 ```
 
@@ -360,7 +352,74 @@ Is $\hat{\sigma}(\hat{p}_{B|A})$ higher or lower than $\hat{\sigma}(\hat{p}_A)$?
 
 
 
+```{r}
+are_consecutive <- function(numbers) {
+  return(all(diff(sort(numbers)) == 1))
+}
 
+count_alice<-0
+count_bob<-0
+simulations<-100000
+for(i in 1:simulations){
+  ndeck<-1:13
+  alice_hand <- sample(ndeck,5)
+  bob_hand<-sample(ndeck[-alice_hand],5)
+  if(are_consecutive(alice_hand)){
+    count_alice = count_alice + 1
+  }
+  if(are_consecutive(bob_hand)){
+    count_bob = count_bob + 1
+  }
+}
+P.a <- round(count_alice/simulations,3)
+P.b <- round(count_bob/simulations,3)
+
+
+nhands<-5
+ndeck<-1:13
+
+
+bob_given_alice<-function(ndeck,nhands){
+  starting_index <- sample(1:(length(ndeck)-nhands),1)
+  alice_straight<- ndeck[starting_index:(starting_index+5)]
+  newdeck<-ndeck[-alice_straight]
+  bob_hand<-sample(newdeck,5)
+  if(are_consecutive(bob_hand)){
+    return(1)
+  } else {
+    return(0)
+  }
+}
+
+count<-0
+simulations<-100000
+for (i in 1:simulations) {
+  count <- count + bob_given_alice(ndeck, 5)
+}
+
+# Estimate the probability
+P.ba <- round(count / simulations,3)
+
+P.ba
+P.a
+P.b
+
+# The probability P(B|A)>P(A), since if Alice shuffled 5 consequitve cards, 
+# the remaining cards are definetly in a semi-consequtive order. Meaning, if Alice 
+# shuffled (2,3,4,5,6), the remaining cards are (1,7,8,9,10,11,12,13), thus the odds
+# of picking consequtive cards increases.
+
+
+# since P(A) and P(B|A) are binomaly distributed A~Bin(1000000,P(A_hat)=0.07), and 
+# B|A=a~Bin(100000,P(B|A)=0.071), the standard deviation can be calculated as npq/n
+sd.a <- sqrt(simulations*P.a*(1-P.a))
+sd.b.a<-sqrt(simulations*P.ba*(1-P.ba))
+sd.a
+sd.b.a
+
+# sd.a<sd.b.a since P(B|A)>P(A), and SD is a monotonic increasing function with max(p)=0.5.
+
+```
 
 
 
@@ -399,7 +458,25 @@ Change the name of the column representing the date to `Date`. Make sure that th
 
 Show the head and tail of the resulting data-frame. 
 
+```{r}
+path <- "https://covid19.who.int/WHO-COVID-19-global-data.csv"
+df <- read.csv(path)
+colnames(df)[1] <- "Date"
+df[,1] <- as.Date(df[,1])
 
+
+head(df)
+tail(df)
+
+df$Country[df$Country == "Türkiye"] <- "Turkey"
+df$Country[df$Country=="Iran (Islamic Republic of)"] <- "Iran"
+df$Country[df$Country=="occupied Palestinian territory, including east Jerusalem"] <- "Palestine"
+df$Country[df$Country=="Syrian Arab Republic"] <- "Syria"
+
+neighboring_EMRO <- unique(df$Country[which(df$WHO_region=="EMRO")])
+neighboring_EMRO<- append(neighboring_EMRO,c("Israel","Cyprus"))
+neighboring_EMRO <- neighboring_EMRO[-c(1,2,3,8,10,11,14,17,18,20,21)]
+```
 
 
 
