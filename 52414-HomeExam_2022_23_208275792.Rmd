@@ -141,7 +141,7 @@ library(data.table)
 library(caTools)
 ####
 library(gtools)
-
+library(ggplot2)
 
 
 options(scipen=999)
@@ -223,80 +223,81 @@ Fit a simple linear regression model to the log-transformed data add the regress
 Use the fitted model to deduce a formula for the expectation, i.e. a function $g(k)$ such that $E[X_k] = g(k)$. 
 
 
-```{r}
-#I added library(gtools) to use function "permutations"
-find_cycles <- function(perm, k){
-  X <- order(perm, decreasing = FALSE)
-  res <- vector("list")
-  for(i in X){
-    temp <- c(i)
-    if(k==1){
-      if(perm[i] == i){
-        res[i] <- temp
-        next
-      }
-      }
-    start <- i
-    cur <- perm[i]
-    while(cur != start){
-      temp <- c(temp, cur)
-      cur <- perm[cur]
-    }
-  if(length(temp)==k){
-    res[[i]]<- temp
-  }
-  res <- res[!sapply(res, is.null)]  # Remove NULL entries
 
+
+
+
+
+```{r}
+find_all_cycles <- function(perm) {
+  n <- length(perm)
+  visited <- logical(n)
+  result <- list()
   
-  return(res)
-  }}
-res <- find_cycles(c(3,4,1,5,2),2)
-res
-# Remove duplicate lists
-unique_res <- res[!duplicated(sapply(res, toString))]
-
-# Print the unique lists
-for (lst in unique_res) {
-  print(lst)
-}
-find_cycles(c(3,4,1,5,2),3)
-```
-
-
-
-
-
-
-
-
-```{r}
-find_all_cycles<-function(perm,k){
-  result<-c()
-  X<- order(perm,decreasing = FALSE)
-  for(i in X){
-    temp<-c(i)
-    if(k==1){
-      if(perm[i]==i){
-        result<-append(result,temp)
-      }  
-    }
+  for (i in seq_len(n)) {
+    if (visited[i])
+      next
+    
+    temp <- c(i)
     start <- i
     cur <- perm[i]
-    while(cur!=start){
-      temp<-append(temp,i)
+    visited[i] <- TRUE
+    
+    while (cur != start) {
+      temp <- c(temp, cur)
+      visited[cur] <- TRUE
       cur <- perm[cur]
-      
     }
-    if(length(temp)==k){
-      if(!any(sapply(result, function(x) all(x %in% temp)))){
-      result <- append(result,temp)
-      }
+    
+    if (!any(sapply(result, function(x) all(x %in% temp)))) {
+      result <- append(result, list(temp))
     }
   }
-  return(result)  
+  
+  outcome <- tabulate(lengths(result), nbins = n)
+  return(outcome)
 }
-find_all_cycles(c(3,4,1,5,2),3)
+n <- 100
+simulations <- 10000
 
+expectedXk <- numeric(n)
+
+for (i in 1:simulations) {
+  perm <- sample(n)
+  Xk <- find_all_cycles(perm)
+  expectedXk <- expectedXk + Xk
+}
+
+expectedXk <- expectedXk / simulations
+
+n <- 100
+k <- 1:n
+
+# Plot E^[Xk] as a function of k
+plot(k, expectedXk, type = "o", xlab = "Cycle Length (k)", ylab = "Estimated E^[Xk]", main = "Estimates of E^[Xk] for n = 100")
+
+# Perform log transformation
+log_expectedXk <- log(expectedXk)
+log_k <- log(k)
+
+# Create a data frame with the log-transformed data
+data <- data.frame(log_k = log(k), log_expectedXk = log(expectedXk))
+
+# Fit linear regression model
+model <- lm(log_expectedXk ~ log_k, data = data)
+
+# Generate predicted values from the model
+data$predicted <- predict(model)
+
+# Create the plot using ggplot2
+plot <- ggplot(data, aes(x = log_k, y = log_expectedXk)) +
+  geom_point() +
+  geom_line(aes(y = predicted), color = "red") +
+  labs(x = "log(Cycle Length log(k))", y = "log(Estimated log(E^[Xk]))", title = "Log-Log Plot of Estimates for n = 100")
+
+# Display the plot
+print(plot)
+#the formula is g(k) = 0.7053-1.0037log(k)
 ```
 
 c. For a random permutation of length $n=100$, Let $p_{12}$ be the probability that the values $1$ and $2$ are in the same cycle.
@@ -307,7 +308,33 @@ Denote your estimator by $\hat{p}_{12}$. Estimate also the standard deviation of
 
 i.e. provide and estimate $\hat{\sigma}(\hat{p}_{12})$ of $\sigma(\hat{p}_{12})$.
 
+```{r}
+find_probability_p12 <- function(perm) {
+  cycles <- find_all_cycles(perm)
+  
+  # Check if 1 and 2 are in the same cycle
+  same_cycle<- (1 %in% cycles && 2 %in% cycles)  
+  if (same_cycle) {
+    return(1)
+  } else {
+    return(0)
+  }
+}
 
+# Perform 10,000 simulations
+n <- 100
+simulations <- 10000
+sample_permutations <- replicate(simulations, sample(n))
+
+# Estimate probability p12
+p12 <- mean(sapply(sample_permutations, find_probability_p12))
+p12
+
+
+
+
+
+```
 
 
 
