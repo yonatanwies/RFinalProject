@@ -297,7 +297,7 @@ plot <- ggplot(data, aes(x = log_k, y = log_expectedXk)) +
 
 # Display the plot
 print(plot)
-#the formula is g(k) = 0.7053-1.0037log(k)
+# the formula is g(k) = 0.7053-1.0037log(k)
 ```
 
 c. For a random permutation of length $n=100$, Let $p_{12}$ be the probability that the values $1$ and $2$ are in the same cycle.
@@ -375,32 +375,42 @@ P.a <- round(count_alice/simulations,3)
 P.b <- round(count_bob/simulations,3)
 
 
-nhands<-5
-ndeck<-1:13
+nhands <- 5
+ndeck <- 1:13
 
-
-bob_given_alice<-function(ndeck,nhands){
-  starting_index <- sample(1:(length(ndeck)-nhands),1)
-  alice_straight<- ndeck[starting_index:(starting_index+5)]
-  newdeck<-ndeck[-alice_straight]
-  bob_hand<-sample(newdeck,5)
-  if(are_consecutive(bob_hand)){
-    return(1)
+bob_given_alice <- function(ndeck, nhands) {
+  alice_hand <- sample(ndeck, nhands, replace = FALSE)
+  bob_hand <- sample(setdiff(ndeck, alice_hand), nhands, replace = FALSE)
+  
+  alice_has_straight <- all(diff(alice_hand) == 1)
+  bob_has_straight <- all(diff(bob_hand) == 1)
+  
+  if (alice_has_straight) {
+    if (bob_has_straight) {
+      return(1)
+    } else {
+      return(0)
+    }
   } else {
-    return(0)
+    return(NA)  # Rejected sample
   }
 }
 
-count<-0
-simulations<-100000
+count <- 0
+simulations <- 100000
+rejected <- 0
+
 for (i in 1:simulations) {
-  count <- count + bob_given_alice(ndeck, 5)
+  alice_result <- bob_given_alice(ndeck, nhands)
+  if (!is.na(alice_result)) {
+    count <- count + alice_result
+  } else {
+    rejected <- rejected + 1
+  }
 }
 
-# Estimate the probability
-P.ba <- round(count / simulations,3)
+p_b_given_a <- count / (simulations - rejected)
 
-P.ba
 P.a
 P.b
 
@@ -463,7 +473,7 @@ path <- "https://covid19.who.int/WHO-COVID-19-global-data.csv"
 df <- read.csv(path)
 colnames(df)[1] <- "Date"
 df[,1] <- as.Date(df[,1])
-
+names(df)
 
 head(df)
 tail(df)
@@ -476,6 +486,17 @@ df$Country[df$Country=="Syrian Arab Republic"] <- "Syria"
 neighboring_EMRO <- unique(df$Country[which(df$WHO_region=="EMRO")])
 neighboring_EMRO<- append(neighboring_EMRO,c("Israel","Cyprus"))
 neighboring_EMRO <- neighboring_EMRO[-c(1,2,3,8,10,11,14,17,18,20,21)]
+ggplot(df[df$Country %in% neighboring_EMRO,], aes(x = Date, y = Cumulative_cases, color = Country)) + geom_line() +
+  labs(x = "Date", y = "Cumulative Number of Cases", title = "Cumulative COVID-19 Cases by Country") +
+  theme_minimal() + theme(legend.position = "left",legend.key.width = unit(0.5, 'cm')) +
+  scale_y_continuous(labels = scales::comma)
+
+ggplot(df[df$Country %in% neighboring_EMRO,], aes(x = Date, y = Cumulative_deaths, color = Country)) + geom_line() +
+  labs(x = "Date", y = "Cumulative Number of Deaths", title = "Cumulative COVID-19 Deaths by Country") +
+  theme_minimal() + theme(legend.position = "left",legend.key.width = unit(0.5, 'cm')) +
+  scale_y_continuous(labels = scales::comma)
+
+
 ```
 
 
@@ -492,8 +513,13 @@ Next, plot the `cumulative` number of `cases` as a function of the `Date` for th
 
 Repeat and show in a different plot the `cumulative` number of `deaths` for each of these countries. 
 
-
-
+```{r}
+economic_df<-read.csv("economic_data.csv",stringsAsFactors = FALSE)
+economic_df$X2018..YR2018.<-as.numeric(economic_df$X2018..YR2018.)
+combined_df<-merge.data.frame(df,economic_df,by=intersect(df$Country,economic_df$Country.Name))
+unique(df$Country) %in% unique(economic_df$Country.Name)
+class(economic_df$X2018..YR2018.)
+```
 
 
 
@@ -503,7 +529,12 @@ c. Load the economic dataset available in moodle in the file `economic_data.csv`
 Merge the two data-frames such that the new data-frame will keep the information in the COVID-19 data-frame, yet will also contain for each row the total population of each country in $2018$. 
 
 Manually rename country names that do not match between the two datasets - you don't have to change all names, but focus on including countries that come up in the analysis of 
+```{r}
+economic_df<-read.csv("economic_data.csv",stringsAsFactors = FALSE)
+economic_df$X2018..YR2018.<-as.numeric(economic_df$X2018..YR2018.)
 
+class(economic_df$X2018..YR2018.)
+```
 (b.) and of the next sub-questions. <br>
 
 Create four new columns, respectively representing the number of *cumulative* `cases` and `deaths` per one million people, and the number of *new* daily `cases` and `deaths` per one million people, for each country and date. <br>
