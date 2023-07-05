@@ -140,10 +140,10 @@ library(data.table)
 
 library(caTools)
 ####
-library(gtools)
-library(ggplot2)
-library(dyplr)
-
+library(gtools) #used for permutations in Q1
+library(ggplot2) # used for plots in Q2
+library(dplyr) #used for piped functions %>%
+library(reshape2)# used to transpose matrix in Q2
 options(scipen=999)
 
 ```
@@ -235,8 +235,9 @@ find_all_cycles <- function(perm) {
   result <- list()
   
   for (i in seq_len(n)) {
-    if (visited[i])
+    if (visited[i]){
       next
+    }
     
     temp <- c(i)
     start <- i
@@ -379,8 +380,8 @@ nhands <- 5
 ndeck <- 1:13
 
 bob_given_alice <- function(ndeck, nhands) {
-  alice_hand <- sample(ndeck, nhands, replace = FALSE)
-  bob_hand <- sample(setdiff(ndeck, alice_hand), nhands, replace = FALSE)
+  alice_hand <- sample(ndeck, nhands)
+  bob_hand <- sample(ndeck[-alice_hand], nhands)
   
   alice_has_straight <- all(diff(alice_hand) == 1)
   bob_has_straight <- all(diff(bob_hand) == 1)
@@ -401,15 +402,15 @@ simulations <- 100000
 rejected <- 0
 
 for (i in 1:simulations) {
-  alice_result <- bob_given_alice(ndeck, nhands)
-  if (!is.na(alice_result)) {
-    count <- count + alice_result
+  result <- bob_given_alice(ndeck, nhands)
+  if (!is.na(result)) {
+    count <- count + result
   } else {
     rejected <- rejected + 1
   }
 }
 
-p_b_given_a <- count / (simulations - rejected)
+p_b_given_a <- round(count / (simulations - rejected),3)
 
 P.a
 P.b
@@ -516,9 +517,23 @@ Repeat and show in a different plot the `cumulative` number of `deaths` for each
 ```{r}
 economic_df<-read.csv("economic_data.csv",stringsAsFactors = FALSE)
 economic_df$X2018..YR2018.<-as.numeric(economic_df$X2018..YR2018.)
-combined_df<-merge.data.frame(df,economic_df,by=intersect(df$Country,economic_df$Country.Name))
-unique(df$Country) %in% unique(economic_df$Country.Name)
-class(economic_df$X2018..YR2018.)
+names(economic_df)[1] <- "Country"
+
+combined_df<-left_join(df,economic_df,by=df$Country)
+economic_df <- dcast(economic_df, `Country` ~  `Series.Name`, value.var = "X2018..YR2018.", fun.aggregate = sum)
+names(economic_df)
+economic_df$Country.Name[economic_df$Country ==  "Egypt, Arab Rep."] <- "Egypt"
+economic_df$Country.Name[economic_df$Country ==  "Syrian Arab Republic"] <- "Syria"
+economic_df$Country.Name[economic_df$Country ==  "Iran, Islamic Rep."] <- "Iran"
+merged_df<-left_join(df,economic_df,by="Country")
+merged_df
+
+merged_df["Cumulative_Cases_per1m"] <- (merged_df$Cumulative_cases*1000000)/merged_df$`Population, total`
+merged_df["Cumulative_Deaths_per1m"] <- (merged_df$Cumulative_deaths*1000000)/merged_df$`Population, total`
+merged_df["New_Cases_per1m"] <- (merged_df$New_cases*1000000)/merged_df$`Population, total`
+
+merged_df["New_Deaths_per1m"] <- (merged_df$New_deaths*1000000)/merged_df$`Population, total`
+
 ```
 
 
@@ -529,12 +544,6 @@ c. Load the economic dataset available in moodle in the file `economic_data.csv`
 Merge the two data-frames such that the new data-frame will keep the information in the COVID-19 data-frame, yet will also contain for each row the total population of each country in $2018$. 
 
 Manually rename country names that do not match between the two datasets - you don't have to change all names, but focus on including countries that come up in the analysis of 
-```{r}
-economic_df<-read.csv("economic_data.csv",stringsAsFactors = FALSE)
-economic_df$X2018..YR2018.<-as.numeric(economic_df$X2018..YR2018.)
-
-class(economic_df$X2018..YR2018.)
-```
 (b.) and of the next sub-questions. <br>
 
 Create four new columns, respectively representing the number of *cumulative* `cases` and `deaths` per one million people, and the number of *new* daily `cases` and `deaths` per one million people, for each country and date. <br>
