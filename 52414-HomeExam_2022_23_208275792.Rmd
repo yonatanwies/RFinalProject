@@ -144,6 +144,8 @@ library(gtools) #used for permutations in Q1
 library(ggplot2) # used for plots in Q2
 library(dplyr) #used for piped functions %>%
 library(reshape2)# used to transpose matrix in Q2
+library(RColorBrewer) # to get more distinct colors, for graph in Q2
+
 options(scipen=999)
 
 ```
@@ -486,18 +488,19 @@ df$Country[df$Country=="Syrian Arab Republic"] <- "Syria"
 
 neighboring_EMRO <- unique(df$Country[which(df$WHO_region=="EMRO")])
 neighboring_EMRO<- append(neighboring_EMRO,c("Israel","Cyprus"))
-neighboring_EMRO <- neighboring_EMRO[-c(1,2,3,8,10,11,14,17,18,20,21)]
-ggplot(df[df$Country %in% neighboring_EMRO,], aes(x = Date, y = Cumulative_cases, color = Country)) + geom_line() +
+neighboring_EMRO <- neighboring_EMRO[-c(1,2,3,8,10,11,14,17,18,20,21,22)]
+cumcases_bycountry_graph<-ggplot(df[df$Country %in% neighboring_EMRO,], aes(x = Date, y = Cumulative_cases, color = Country)) + geom_line() +
   labs(x = "Date", y = "Cumulative Number of Cases", title = "Cumulative COVID-19 Cases by Country") +
   theme_minimal() + theme(legend.position = "left",legend.key.width = unit(0.5, 'cm')) +
   scale_y_continuous(labels = scales::comma)
 
-ggplot(df[df$Country %in% neighboring_EMRO,], aes(x = Date, y = Cumulative_deaths, color = Country)) + geom_line() +
+cumdeaths_bycountry_graph<-ggplot(df[df$Country %in% neighboring_EMRO,], aes(x = Date, y = Cumulative_deaths, color = Country)) + geom_line() +
   labs(x = "Date", y = "Cumulative Number of Deaths", title = "Cumulative COVID-19 Deaths by Country") +
   theme_minimal() + theme(legend.position = "left",legend.key.width = unit(0.5, 'cm')) +
   scale_y_continuous(labels = scales::comma)
 
-
+cumcases_bycountry_graph
+cumdeaths_bycountry_graph
 ```
 
 
@@ -514,27 +517,6 @@ Next, plot the `cumulative` number of `cases` as a function of the `Date` for th
 
 Repeat and show in a different plot the `cumulative` number of `deaths` for each of these countries. 
 
-```{r}
-economic_df<-read.csv("economic_data.csv",stringsAsFactors = FALSE)
-economic_df$X2018..YR2018.<-as.numeric(economic_df$X2018..YR2018.)
-names(economic_df)[1] <- "Country"
-
-combined_df<-left_join(df,economic_df,by=df$Country)
-economic_df <- dcast(economic_df, `Country` ~  `Series.Name`, value.var = "X2018..YR2018.", fun.aggregate = sum)
-names(economic_df)
-economic_df$Country.Name[economic_df$Country ==  "Egypt, Arab Rep."] <- "Egypt"
-economic_df$Country.Name[economic_df$Country ==  "Syrian Arab Republic"] <- "Syria"
-economic_df$Country.Name[economic_df$Country ==  "Iran, Islamic Rep."] <- "Iran"
-merged_df<-left_join(df,economic_df,by="Country")
-merged_df
-
-merged_df["Cumulative_Cases_per1m"] <- (merged_df$Cumulative_cases*1000000)/merged_df$`Population, total`
-merged_df["Cumulative_Deaths_per1m"] <- (merged_df$Cumulative_deaths*1000000)/merged_df$`Population, total`
-merged_df["New_Cases_per1m"] <- (merged_df$New_cases*1000000)/merged_df$`Population, total`
-
-merged_df["New_Deaths_per1m"] <- (merged_df$New_deaths*1000000)/merged_df$`Population, total`
-
-```
 
 
 
@@ -555,6 +537,69 @@ the *log-scaled* `cumulative` number of `cases` and `deaths` per million, as a f
 Which countries suffered the most from the pandemic based on these plots? how did Israel do compared to its neighbors?
 
 
+```{r}
+economic_df<-read.csv("economic_data.csv",stringsAsFactors = FALSE)
+economic_df$X2018..YR2018.<-as.numeric(economic_df$X2018..YR2018.)
+names(economic_df)[1] <- "Country"
+clean_economic <- na.omit(economic_df)
+
+
+economic_df <- dcast(clean_economic, `Country` ~  `Series.Name`, value.var = "X2018..YR2018.", fun.aggregate = sum)
+
+economic_df$Country[economic_df$Country ==  "Egypt, Arab Rep."] <- "Egypt"
+economic_df$Country[economic_df$Country ==  "Syrian Arab Republic"] <- "Syria"
+economic_df$Country[economic_df$Country ==  "Iran, Islamic Rep."] <- "Iran"
+merged_df<-left_join(df,economic_df,by="Country")
+merged_df
+
+merged_df["Cumulative_Cases_per1m"] <- (merged_df$Cumulative_cases*1000000)/merged_df$`Population, total`
+merged_df["Cumulative_Deaths_per1m"] <- (merged_df$Cumulative_deaths*1000000)/merged_df$`Population, total`
+merged_df["New_Cases_per1m"] <- (merged_df$New_cases*1000000)/merged_df$`Population, total`
+
+merged_df["New_Deaths_per1m"] <- (merged_df$New_deaths*1000000)/merged_df$`Population, total`
+
+
+color_palette <- brewer.pal(12, "Set3")
+# Graph 1: Log-Cumulative COVID-19 Cases by Country
+logcumcases_bycountry_graph <- ggplot(merged_df[merged_df$Country %in% neighboring_EMRO,], aes(x = Date, y = log(Cumulative_Cases_per1m), color = Country)) +
+  geom_line() +
+  labs(x = "Date", y = "Cumulative Number of Cases", title = "Log-Cumulative COVID-19 Cases by Country per 1m") +
+  theme_minimal() +
+  theme(legend.position = "left", legend.key.width = unit(0.5, "cm")) +
+  scale_y_continuous(labels = scales::comma) +
+  scale_color_manual(values = color_palette)
+
+# Graph 2: Log-Cumulative COVID-19 Deaths by Country per 1m
+logcumdeaths_bycountry_graph <- ggplot(merged_df[merged_df$Country %in% neighboring_EMRO,], aes(x = Date, y = log(Cumulative_Cases_per1m), color = Country)) +
+  geom_line() +
+  labs(x = "Date", y = "Cumulative Number of Deaths", title = "Log-Cumulative COVID-19 Deaths by Country per 1m") +
+  theme_minimal() +
+  theme(legend.position = "left", legend.key.width = unit(0.5, "cm")) +
+  scale_y_continuous(labels = scales::comma) +
+  scale_color_manual(values = color_palette)
+
+# Display the graphs
+logcumcases_bycountry_graph
+logcumdeaths_bycountry_graph
+cumcases_bycountry_graph
+cumdeaths_bycountry_graph
+# The countries that suffered the most are Israel and Iran Israel is above Egypt in cumulative cases per 1m - the most cases reported in Israel compared to Egypt is 543597.8 vs 93062.49 respectively. That is 5.84 times more _reported_ cases in Israel than in Iran It is however important to note that Israel is more developed than Iran, meaning the reported number can be more trustworthy.
+
+max(merged_df$Cumulative_Cases_per1m[which(merged_df$Country=="Israel")])/
+  max(merged_df$Cumulative_Cases_per1m[which(merged_df$Country=="Iran")])
+
+specific_country_deaths <- merged_df %>%
+  filter(Country %in% neighboring_EMRO) %>%
+  group_by(Country) %>%
+  summarize(Max_Cumulative_Deaths = max(Cumulative_deaths)) %>%
+  arrange(desc(Max_Cumulative_Deaths)) %>%
+  distinct()
+
+specific_country_deaths
+
+
+# with regards to absloute numbers, Iran is the great "winner" here - with 146297 max deaths. That number is objectivly larger than its successor, Iraq, which has 25375 reported deaths. That is a 120922 difference, and a 576% scale difference.It is also worth to mention that Iraq's and Iran's communication with the western world is less trustworthy than Israel's or Jordan's. We can assume the numbers are even greater than the reported. 
+```
 
 d. One measure of the healthcare system strength in a country is the ratio between the number of deaths and the number of cases (with the caveats that this number is affected by other things like
 
@@ -565,7 +610,56 @@ Extract for *all* countries the latest reported cumulative number of `cases per 
 Fit a linear regression line to the log-scaled data. <br>
 
 Define the `fatality rate` as the ratio between the latest reported cumulative numbers of `deaths` and `cases`, i.e. an estimate of the probability that an infected individual died form the disease. Display the distribution of `fatality rate` across countries using a plotting method of your choice. Describe the distribution: what is the mean/median? is it symmetric? skewed? are there outlier countries? which ones?
+```{r}
+# Extract the latest reported cumulative cases and deaths per million
+latest_cases <- aggregate(log(Cumulative_Cases_per1m) ~ Country, data = merged_df, FUN = function(x) tail(x, 1))
+latest_deaths <- aggregate(log(Cumulative_Deaths_per1m) ~ Country, data = merged_df, FUN = function(x) tail(x, 1))
 
+# Merge the two data frames
+latest_data <- merge(latest_cases, latest_deaths, by = "Country")
+latest_data<- latest_data[-c(30,54,174),] #removed Erithrea and Turkmenistan, that had NaN values. Burundi had cumulative deaths per 1m < 1, which pointed as an outlier on the graph. According to Wikipedia, "Burundi is the poorest country in the world as per GDP per capita, and is one of the least developed countries, facing widespread poverty, corruption, instability, authoritarianism, and illiteracy." It is safe to presume the reported numbers are inaccurate, and not to be compare to.
+
+colnames(latest_data) <- c("Country", "Cumulative_Cases_per1m", "Cumulative_Deaths_per1m")
+
+# Create the scatter plot on a log scale
+logdeaths_vs_logcases <- ggplot(latest_data, aes(x = log(Cumulative_Cases_per1m), y = log(Cumulative_Deaths_per1m))) +
+  geom_point() +
+  labs(x = "Log Cumulative Cases per million", y = "Log Cumulative Deaths per million", title = "COVID-19 Cases vs Deaths per million") +
+  scale_x_continuous(labels = scales::comma) +
+  scale_y_continuous(labels = scales::comma) +
+  theme_minimal() 
+  
+
+model <- lm(log(Cumulative_Deaths_per1m) ~ log(Cumulative_Cases_per1m), data = latest_data)
+
+logdeaths_vs_logcases + geom_abline(intercept = coef(model)[1], slope = coef(model)[2], color = "blue")
+
+
+
+fatality_rate <- latest_data$Cumulative_Deaths / latest_data$Cumulative_Cases
+
+# Create a data frame with fatality rate and country
+fatality_data <- data.frame(Country = latest_data$Country, Fatality_Rate = fatality_rate)
+
+# Plotting the histogram
+ggplot(fatality_data, aes(x = Fatality_Rate)) +
+  geom_histogram(binwidth = 0.02, fill = "steelblue", color = "white") +
+  labs(x = "Fatality Rate", y = "Count", title = "Distribution of Fatality Rate") +
+  theme_minimal()
+
+ggplot(fatality_data, aes(x = "", y = Fatality_Rate)) +
+  geom_violin(trim = FALSE, fill = "lightblue") +
+  labs(x = "", y = "Fatality Rate", title = "Distribution of Fatality Rate across Countries") +
+  theme_minimal()
+
+mean_fatality <- mean(fatality_data$Fatality_Rate)
+median_fatality <- median(fatality_data$Fatality_Rate)
+
+#according to common agreement, the outliers are such that they are > 2 standard deviations from the mean. 
+outliers <- fatality_data[fatality_data$Fatality_Rate > (mean_fatality + 2 * sd(fatality_data$Fatality_Rate)), "Country"]
+
+
+```
 
 
 
