@@ -652,13 +652,22 @@ ggplot(fatality_data, aes(x = "", y = Fatality_Rate)) +
   labs(x = "", y = "Fatality Rate", title = "Distribution of Fatality Rate across Countries") +
   theme_minimal()
 
-mean_fatality <- mean(fatality_data$Fatality_Rate)
-median_fatality <- median(fatality_data$Fatality_Rate)
+mean_fatality <- round(mean(fatality_data$Fatality_Rate),3)
+median_fatality <- round(median(fatality_data$Fatality_Rate),3)
 
 #according to common agreement, the outliers are such that they are > 2 standard deviations from the mean. 
 outliers <- fatality_data[fatality_data$Fatality_Rate > (mean_fatality + 2 * sd(fatality_data$Fatality_Rate)), "Country"]
 
-
+# The only outlier is my filtered data, is Peru.
+above_mean <- sum(fatality_data$Fatality_Rate > mean_fatality)
+proportion_above_mean <- round(above_mean / nrow(fatality_data),3)
+skewness(fatality_data$Fatality_Rate)
+#The distribution is not symmetric. According to the code above, we can see that the proportion of observations above the mean is 0.575
+#Raw data:
+#Mean: 0.565
+#Median: 0.581
+#Skewness: -0.75 
+#Since the Median is greater than the Mean, we can define the graph as moderately  positively skewed.
 ```
 
 
@@ -677,7 +686,25 @@ Which countries were hit earliest/latest by the pandemic?
 Is there a different in the number of waves suffered by each country? 
 
 
+```{r}
+most_suffered<- subset(df, Cumulative_deaths>200000) 
 
+ggplot(most_suffered, aes(x = Date, y = New_cases, color = Country)) +
+  geom_smooth() +
+  labs(title = "Smoothed New Daily Cases for Countries with >200,000 Cumulative Deaths",
+       x = "Date",
+       y = "New Cases") +
+  theme_minimal() + scale_y_continuous(labels = scales::comma_format())
+
+# 
+# The curves of different countries exhibit distinct qualitative behaviors. One notable example is the curves of the United States (pink) and India (light brown). The US curve shows two significant peaks, indicating waves of new cases, with one day reaching nearly 300,000 cases. The country was also among the first to surpass 200,000 deaths, which occurred in the middle of 2020. In contrast, India reached 200,000 deaths in the middle of 2021 and experienced a substantial decline in cases afterward, with the number of daily cases dropping from over 300,000 to a significantly lower level. Since then, India has had one major wave with over 100,000 cases.
+# 
+# Mexico (dark green) displays a relatively smooth curve with a smaller maximum peak and a flatter line in the middle. Other countries in the group exhibit different curve patterns, with varying times of surpassing 200,000 deaths.
+# 
+# Regarding the timing of the pandemic, the United States was among the earliest countries hit, being one of the first to surpass 200,000 deaths. On the other hand, the United Kingdom experienced this milestone later than the other countries in the group.
+# 
+# Each country shows a different number of waves in its curve, with no two curves resembling each other. It is also worth considering that the response measures and restrictions implemented by each country can influence the shape and intensity of the waves. While some countries may have taken strict measures and imposed restrictions, others, like Mexico, may have had different approaches and exhibited distinct patterns in their curves. The introduction of vaccines in late 2021 has also played a role, leading to declining curves in some countries.
+```
 
 
 
@@ -688,7 +715,45 @@ Create a new column representing `GDP per capita` for each country. Then, plot t
 
 percent of population above $65$ (`pop65`) in each of the six `WHO_regions`, in two separate plots (each region in a different color). Describe the results.
 
+```{r}
+regions <- c(unique(merged_df$WHO_region))
 
+# Plot for new cases by WHO region
+ggplot(merged_df, aes(x = Date, y = New_cases, color = WHO_region)) +
+  geom_line() +
+  labs(x = "Date", y = "New Cases", title = "New COVID-19 Cases by WHO Region") +
+  scale_color_discrete(name = "WHO Region") +
+  theme_minimal()
+
+# Plot for new deaths by WHO region
+ggplot(merged_df, aes(x = Date, y = New_deaths, color = WHO_region)) +
+  geom_line() +
+  labs(x = "Date", y = "New Deaths", title = "New COVID-19 Deaths by WHO Region") +
+  scale_color_discrete(name = "WHO Region") +
+  theme_minimal()
+
+#######DESCRIBE THE RESULTS
+
+names(merged_df)[13]<-"pop65"
+
+merged_df$GDP_per_capita <- merged_df$`GDP, PPP (current international $)` / merged_df$`Population ages 65 and above (% of total population)`
+
+
+ggplot(merged_df, aes(x = GDP_per_capita, color = WHO_region)) +
+  stat_ecdf(geom = "step") +
+  labs(x = "GDP per Capita", y = "Empirical CDF", title = "Empirical CDF of GDP per Capita by WHO Region") +
+  scale_color_discrete(name = "WHO Region") +
+  theme_minimal()
+
+# Plot percentage of population above 65 (pop65) by WHO region
+ggplot(merged_df, aes(x = pop65, color = WHO_region)) +
+  stat_ecdf(geom = "step") +
+  labs(x = "Percentage of Population Above 65", y = "Empirical CDF", title = "Empirical CDF of Pop65 by WHO Region") +
+  scale_color_discrete(name = "WHO Region") +
+  theme_minimal()
+
+
+```
 
 
 
