@@ -417,44 +417,44 @@ Is $\hat{\sigma}(\hat{p}_{B|A})$ higher or lower than $\hat{\sigma}(\hat{p}_A)$?
 nhands <- 5
 ndeck <- 1:13
 
-bob_given_alice <- function(ndeck, nhands) {
-  starting_index <- sample(1:(length(ndeck)-nhands),1)
-  alice_straight<- ndeck[starting_index:(starting_index+5)]
-  newdeck<-ndeck[-alice_straight]
-  bob_hand<-sample(newdeck,5)
+# bob_given_alice <- function(ndeck, nhands) {
+#   starting_index <- sample(1:(length(ndeck)-nhands),1)
+#   alice_straight<- ndeck[starting_index:(starting_index+5)]
+#   newdeck<-ndeck[-alice_straight]
+#   bob_hand<-sample(newdeck,5)
+# 
+#   bob_has_straight <- all(diff(bob_hand) == 1)
+#   
+#   if (alice_straight) {
+#     if (bob_has_straight) {
+#       return(1)
+#     } else {
+#       return(0)
+#     }
+#   } else {
+#     return(NA)  # Rejected sample
+#   }
+# }
 
-    bob_has_straight <- all(diff(bob_hand) == 1)
-  
-  if (alice_has_straight) {
-    if (bob_has_straight) {
+
+bob_given_alice<-function(ndeck,nhands){
+  bob_cond_alice <- 0
+  alice_hand <- sample(ndeck,nhands)
+  if(are_consecutive(alice_hand)){
+    bob_hand<-sample(ndeck[-alice_hand],5)
+    if(are_consecutive(bob_hand)){
       return(1)
-    } else {
-      return(0)
     }
-  } else {
-    return(NA)  # Rejected sample
   }
+  return(0)
 }
 
-count <- 0
 simulations <- 100000
-rejected <- 0
-
+countb_given_a<-0
 for (i in 1:simulations) {
-  result <- bob_given_alice(ndeck, nhands)
-  if (!is.na(result)) {
-    count <- count + result
-  } else {
-    rejected <- rejected + 1
-  }
+  z<-bob_given_alice(ndeck,nhands)
+  countb_given_a = countb_given_a + z
 }
-
-P.ba <- round(count / (simulations - rejected),3)
-
-P.a
-P.b
-
-
 
 ```
 The probability P(B|A)>P(A), since if Alice shuffled 5 consequitve cards, the remaining cards are definetly in a semi-consequtive order. Meaning, if Alice 
@@ -469,12 +469,12 @@ Since P(A) and P(B|A) are binomaly distributed $A$ ~ $Bin(1000000,P(A_hat)=0.07)
 
 
 ```{r}
-sd.a <- sqrt(simulations*P.a*(1-P.a))
-sd.b.a<-sqrt(simulations*P.ba*(1-P.ba))
-sd.a
-sd.b.a
+# sd.a <- sqrt(simulations*P.a*(1-P.a))
+# sd.b.a<-sqrt(simulations*P.ba*(1-P.ba))
+# sd.a
+# sd.b.a
 ```
-sd.a<sd.b.a since P(B|A)>P(A), and SD is a monotonic increasing function with max(p)=0.5.
+sd.a<sd.b.a since P(B|A)>P(A), and SD of a binomial distribution is a monotonic increasing function with max(p)=0.5.
 
 
 
@@ -697,6 +697,7 @@ According to common agreement, the outliers are such that they are > 2 standard 
 
 ```{r}
 outliers <- fatality_data[fatality_data$Fatality_Rate > (mean_fatality + 2 * sd(fatality_data$Fatality_Rate)), "Country"]
+outliers
 ```
 
 The only outlier is my filtered data, is Peru.
@@ -707,12 +708,12 @@ proportion_above_mean <- round(above_mean / nrow(fatality_data),3)
 skew<-round(skewness(fatality_data$Fatality_Rate),3)
 ```
 
-The distribution is not symmetric. According to the code above, we can see that the proportion of observations above the mean is 0.575
+The distribution is not symmetric. According to the code above, we can see that the proportion of observations above the mean is 0.575 \n
 Raw data:
-Mean: 0.565
-Median: 0.581
-Skewness: -0.75 
-Since the Median is greater than the Mean, we can define the graph as moderately  positively skewed.
+Mean: 0.565;\n
+Median: 0.581;\n
+Skewness: -0.75;\n 
+Since the Median is greater than the Mean, we can define the graph as moderately  positively skewed.\n\n\n
 
 
 e. Find the countries suffering the highest number of deaths by COVID-19, i.e. those with $>200,000$ cumulative number of `deaths`.
@@ -738,16 +739,17 @@ ggplot(most_suffered, aes(x = Date, y = New_cases, color = Country)) +
        y = "New Cases") +
   theme_minimal() + scale_y_continuous(labels = scales::comma_format())
 
-# 
-# The curves of different countries exhibit distinct qualitative behaviors. One notable example is the curves of the United States (pink) and India (light brown). The US curve shows two significant peaks, indicating waves of new cases, with one day reaching nearly 300,000 cases. The country was also among the first to surpass 200,000 deaths, which occurred in the middle of 2020. In contrast, India reached 200,000 deaths in the middle of 2021 and experienced a substantial decline in cases afterward, with the number of daily cases dropping from over 300,000 to a significantly lower level. Since then, India has had one major wave with over 100,000 cases.
-# 
-# Mexico (dark green) displays a relatively smooth curve with a smaller maximum peak and a flatter line in the middle. Other countries in the group exhibit different curve patterns, with varying times of surpassing 200,000 deaths.
-# 
-# Regarding the timing of the pandemic, the United States was among the earliest countries hit, being one of the first to surpass 200,000 deaths. On the other hand, the United Kingdom experienced this milestone later than the other countries in the group.
-# 
-# Each country shows a different number of waves in its curve, with no two curves resembling each other. It is also worth considering that the response measures and restrictions implemented by each country can influence the shape and intensity of the waves. While some countries may have taken strict measures and imposed restrictions, others, like Mexico, may have had different approaches and exhibited distinct patterns in their curves. The introduction of vaccines in late 2021 has also played a role, leading to declining curves in some countries.
+
 ```
 
+
+We can determine unique behaviours in the countries' behaviour. For example, the US's graph (in pink) has a significant increase right in the beggining of 2021, a decrease to almost 0 mid 21, and a major increase to ~250K new cases daily starting 2022. It is also the first one to be affected as dramaticly compared to other countries. It was the first to reach 200k deaths.  This can be linked to the president at the time, Donald Trump, who treated COVID as nothing to pay attention to. 
+
+In contrast, India's data (which only starts mid 2021), peaks extremely high at the start, with only a single other peak. We can see that their second peak, together with most other countries in the world, was at starting of 2022. The Russian Federation and Brazil follow a similar trend.
+
+Countries like Mexico exhibit a fairly smooth graph - no major peaks at any time.
+
+Overall, the curves highlight the diverse and complex nature of the COVID-19 pandemic across different countries, emphasizing the importance of tailored approaches in combating the virus and reducing its impact.
 
 
 
@@ -766,15 +768,24 @@ ggplot(merged_df, aes(x = Date, y = New_cases, color = WHO_region)) +
   labs(x = "Date", y = "New Cases", title = "New COVID-19 Cases by WHO Region") +
   scale_color_discrete(name = "WHO Region") +
   theme_minimal()
+```
 
+We can obsereve that the first region the be significantly impacted was EURO, with a major peak start of 2022, with ~2 million cases. However, the WPRO region seemed to have a extremely bigger peak starting 2023, with over 6 million new cases. 
+
+```{r}
 # Plot for new deaths by WHO region
-ggplot(merged_df, aes(x = Date, y = New_deaths, color = WHO_region)) +
+ggplot(merged_df[merged_df$New_deaths >= 0, ], aes(x = Date, y = New_deaths, color = WHO_region)) +
   geom_line() +
   labs(x = "Date", y = "New Deaths", title = "New COVID-19 Deaths by WHO Region") +
   scale_color_discrete(name = "WHO Region") +
   theme_minimal()
 
-#######DESCRIBE THE RESULTS
+```
+! I only display dates with New Deaths >=0
+
+
+
+```{r}
 
 names(merged_df)[13]<-"pop65"
 
@@ -797,15 +808,4 @@ ggplot(merged_df, aes(x = pop65, color = WHO_region)) +
 
 ```
 
-
-
-
-
-
-
-**Solutions: QU. 2**
-
-
-
-[Write your code and text explanations here]
 
