@@ -14,6 +14,7 @@ date: "July 7th, 2023"
 
 
 
+
 ### Submission Instructions (Please read carefully)   
 
 
@@ -450,7 +451,8 @@ for (i in 1:simulations) {
     rejected_samples <- rejected_samples + 1
   }
 }
-P.ba <- bob_count / alice_count
+P.ba <- round(bob_count / alice_count,3)
+
 ```
 
 The probability P(B|A)>P(A), since if Alice shuffled 5 consequitve cards, the remaining cards are definetly in a semi-consequtive order. Meaning, if for example, Alice shuffled (2,3,4,5,6), the remaining cards are (1,7,8,9,10,11,12,13), thus the odds of picking consequtive cards increases.
@@ -469,8 +471,8 @@ In rejection sampling, the sampling process takes into account the condition tha
 
 ```{r}
 
-sd_A <- (sqrt(P.a*(1 - P.a)))/(sqrt(simulations))*sqrt(simulations)
-sd_B.a <- (sqrt(P.ba*(1 - P.ba)))/(sqrt(simulations))*sqrt(simulations)
+sd_A <- round((sqrt(P.a*(1 - P.a)))/(sqrt(simulations))*sqrt(simulations),3)
+sd_B.a <- round((sqrt(P.ba*(1 - P.ba)))/(sqrt(simulations))*sqrt(simulations),3)
 
 sd_A
 sd_B.a
