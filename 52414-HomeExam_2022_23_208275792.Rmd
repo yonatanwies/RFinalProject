@@ -1,6 +1,6 @@
 ---
 
-title: '52414, 2022-23: Home Exam'
+title: '52414-HomeExam_2022_23_208275792'
 
 output:
 
@@ -8,11 +8,9 @@ output:
 
   pdf_document: default
 
-date: "July 2nd, 2023"
+date: "July 7th, 2023"
 
 ---
-
-
 
 
 
@@ -112,8 +110,6 @@ This is an .Rmd file. Copy it with your mouse to create and Rmd file, and edit t
 
 
 
-
-
 Good luck!
 
 
@@ -144,7 +140,7 @@ options(scipen=999)
 
 ```
 
-```{r, echo = FALSE, warning=FALSE, message=FALSE}
+```{r, warning=FALSE, message=TRUE}
 library(gtools) #used for permutations in Q1
 library(ggplot2) # used for plots in Q2
 library(dplyr) #used for piped functions %>%
@@ -175,7 +171,7 @@ In this question we study some properties of random **permutations**. A permutat
 The set of permutations on $n$ elements is denoted $S_n$, and has size $|S_n|  = n!$. We consider here radnom sampling of permutation, i.e. a uniform distribution over all $n!$ permutations, where the probability of each permutation being chosen is $\frac{1}{n!}$.
 
 
-
+# Q1a
 
 
 a. (Confused secretary Problem): 
@@ -211,7 +207,8 @@ print(round(mean(unlist(outcome)),3))
 
 ```
 The code defines a function called confused_secretary that takes an integer n as input. It creates two vectors, envelopes and correct_assignment, to store the envelope positions and whether each assignment is correct or not. It then generates a random permutation of positions using the sample function and checks if each position matches its corresponding index. If all assignments are incorrect, it returns 1, otherwise it returns 0. The code then runs the simulation by calling the function 10,000 times, storing the results in the outcome list.
-
+\n
+# Q1b
 b. For a permutation $v \in S_n$,  a cycle of length $k$ is a vector of integers $(a_1, a_2, a_3, a_4, .., a_k)$ such that $v(a_1) = a_2, v(a_2) = a_3, .., v(a_{k-1})=a_k$ and $v(a_k) = 1$. For example, for the permutation $v = (3,4,1,5,2)$ we have the cycle $(1,3)$ of length $2$ because $v(1) = 3$ and $v(3) = 1$. We also have the cycle $(2,4,5)$ of length $3$, because $v(2) = 4, v(4) = 5$ and $v(5)=2$. See also another example of the cycles of a permutation in the figure above.  <br>
 
 Let $X_k$ be the number of cycles of length $k$ in a random permutation of length $n$ selected uniformly from $S_n$.  
@@ -233,7 +230,6 @@ Use the fitted model to deduce a formula for the expectation, i.e. a function $g
 
 
 ```{r}
-
 find_all_cycles <- function(perm) {
   n <- length(perm)
   visited <- rep(FALSE, n)
@@ -243,8 +239,8 @@ find_all_cycles <- function(perm) {
     if (visited[i]){
       next
     }
-    cycle_length <- 1
     
+    cycle_length <- 1
     start <- i
     cur <- perm[i]
     visited[i] <- TRUE
@@ -254,11 +250,18 @@ find_all_cycles <- function(perm) {
       visited[cur] <- TRUE
       cur <- perm[cur]
     }
+    
     result[cycle_length] <- result[cycle_length] + 1
   } 
   
   return(result)
 }
+
+# Function to count cycles of each length in a permutation
+# Arguments:
+#   - perm: A permutation vector
+# Returns:
+#   - result: A vector with counts of cycles for each length
 
 
 n <- 100
@@ -266,18 +269,26 @@ simulations <- 10000
 
 expectedXk <- vector(length=n)
 
+# Perform simulations
 for (i in 1:simulations) {
   perm <- sample(n)
+  
+  # Count cycles of each length in the permutation
   Xk <- find_all_cycles(perm)
+  
+  # Accumulate the counts for each length
   expectedXk <- expectedXk + Xk
 }
 
+# Calculate the average counts for each length
 expectedXk <- expectedXk / simulations
 
 n <- 100
 k <- 1:n
 
+# Plot the estimated expected number of cycles for each length
 plot(k, expectedXk, type = "o", xlab = "Cycle Length (k)", ylab = "Estimated E^[Xk]", main = "Estimates of E^[Xk]")
+
 
 # Perform log transformation
 log_expectedXk <- log(expectedXk)
@@ -299,11 +310,10 @@ print(plot)
 
 
 We can deduce a formula for the expectation E[Xk] as a function of k:
+$E[X_k] = exp(0.05706) * k(-1.01643)$
 
-#$E[X_k] = exp(0.05706) * k(-1.01643)$
-
-
-
+\n
+# Q1c
 c. For a random permutation of length $n=100$, Let $p_{12}$ be the probability that the values $1$ and $2$ are in the same cycle.
 
 Estimate this probability using $10,000$ simulations. 
@@ -312,6 +322,11 @@ Denote your estimator by $\hat{p}_{12}$. Estimate also the standard deviation of
 i.e. provide and estimate $\hat{\sigma}(\hat{p}_{12})$ of $\sigma(\hat{p}_{12})$.
 
 ```{r}
+# Function to check if values 1 and 2 are in the same cycle of a permutation
+# Arguments:
+#   - perm: A permutation vector
+# Returns:
+#   - result: 1 if values 1 and 2 are in the same cycle, 0 otherwise
 p12_together <- function(perm) {
   n <- length(perm)
   visited <- rep(FALSE, n)
@@ -339,30 +354,33 @@ p12_together <- function(perm) {
   
   return(0)
 }
+
 n <- 100
 simulations <- 1000
 p12_values <- numeric(simulations)
-count<-0
 
-for(i in 1:simulations){
+# Perform simulations to estimate p12
+for (i in 1:simulations) {
   result <- p12_together(sample(1:n))
   p12_values[i] <- result
 }
 
+# Estimate p12_hat and its standard deviation
+p12_hat <- round(mean(p12_values), 3)
+sigma_p12 <- round(sqrt(p12_hat * (1 - p12_hat) / simulations), 3)
 
+p12_hat # Estimated value of p12
+sigma_p12 # Estimated standard deviation of p12_hat
 
-p12_hat <- round(mean(p12_values),3)
-sigma_p12<-round(sqrt(p12_hat*(1-p12_hat)/simulations),3)
-p12_hat
-sigma_p12
 
 ```
 
-The estimation $\hat{p}_{12} = ~0.5$
-The estimation $\hat{\sigma}(\hat{p}_{12}) = ~0.05 $
+The estimation $\hat{p}_{12} = ~0.5$ \n
+The estimation $\sigma(\hat{p}_{12}) = ~0.05 $
 
 
-
+\n
+# Q1d
 
 d. Suppose that Alice and Bob play poker with a deck of only $13$ cards numbered $1,2,..,13$ (all from the same symbol), 
 
@@ -395,7 +413,7 @@ for(i in 1:simulations){
 }
 P.a <- round(count_alice/simulations,3)
 P.b <- round(count_bob/simulations,3)
-
+P.a
 ```
 
 
@@ -412,68 +430,55 @@ Is $\hat{\sigma}(\hat{p}_{B|A})$ higher or lower than $\hat{\sigma}(\hat{p}_A)$?
 
 
 ```{r}
-
-
 nhands <- 5
 ndeck <- 1:13
 
-# bob_given_alice <- function(ndeck, nhands) {
-#   starting_index <- sample(1:(length(ndeck)-nhands),1)
-#   alice_straight<- ndeck[starting_index:(starting_index+5)]
-#   newdeck<-ndeck[-alice_straight]
-#   bob_hand<-sample(newdeck,5)
-# 
-#   bob_has_straight <- all(diff(bob_hand) == 1)
-#   
-#   if (alice_straight) {
-#     if (bob_has_straight) {
-#       return(1)
-#     } else {
-#       return(0)
-#     }
-#   } else {
-#     return(NA)  # Rejected sample
-#   }
-# }
-
-
-bob_given_alice<-function(ndeck,nhands){
-  bob_cond_alice <- 0
-  alice_hand <- sample(ndeck,nhands)
-  if(are_consecutive(alice_hand)){
-    bob_hand<-sample(ndeck[-alice_hand],5)
-    if(are_consecutive(bob_hand)){
-      return(1)
-    }
-  }
-  return(0)
-}
-
+alice_count <- 0
+bob_count <- 0
+rejected_samples <- 0
 simulations <- 100000
-countb_given_a<-0
+
 for (i in 1:simulations) {
-  z<-bob_given_alice(ndeck,nhands)
-  countb_given_a = countb_given_a + z
+  alice_hand <- sample(ndeck, nhands, replace = FALSE)
+  if (all(diff(sort(alice_hand)) == 1)) {
+    alice_count <- alice_count + 1
+    bob_hand <- sample(setdiff(ndeck, alice_hand), nhands, replace = FALSE)
+    if (all(diff(sort(bob_hand)) == 1)) {
+      bob_count <- bob_count + 1
+    }
+  } else {
+    rejected_samples <- rejected_samples + 1
+  }
 }
+P.ba <- bob_count / alice_count
+```
+
+The probability P(B|A)>P(A), since if Alice shuffled 5 consequitve cards, the remaining cards are definetly in a semi-consequtive order. Meaning, if for example, Alice shuffled (2,3,4,5,6), the remaining cards are (1,7,8,9,10,11,12,13), thus the odds of picking consequtive cards increases.
+
+```{r}
+
+fraction_rejected <- rejected_samples / simulations
+fraction_rejected
+
 
 ```
-The probability P(B|A)>P(A), since if Alice shuffled 5 consequitve cards, the remaining cards are definetly in a semi-consequtive order. Meaning, if Alice 
-shuffled (2,3,4,5,6), the remaining cards are (1,7,8,9,10,11,12,13), thus the odds of picking consequtive cards increases.
+
 
 In rejection sampling, the sampling process takes into account the condition that Alice has a straight hand. It focuses on the subset of permutations where Alice has a straight hand and estimates the probability of Bob having a straight hand within that subset. Since this subset is more favorable for Bob to have a straight hand, the conditional probability P(B|A) is higher than the overall probability P(A).
 
 
-
-
-Since P(A) and P(B|A) are binomaly distributed $A$ ~ $Bin(1000000,P(A_hat)=0.07)$, and $B|A=a$~$Bin(100000,P(B|A)=0.071)$, the standard deviation can be calculated as npq/n
-
-
 ```{r}
-# sd.a <- sqrt(simulations*P.a*(1-P.a))
-# sd.b.a<-sqrt(simulations*P.ba*(1-P.ba))
-# sd.a
-# sd.b.a
+
+sd_A <- (sqrt(P.a*(1 - P.a)))/(sqrt(simulations))*sqrt(simulations)
+sd_B.a <- (sqrt(P.ba*(1 - P.ba)))/(sqrt(simulations))*sqrt(simulations)
+
+sd_A
+sd_B.a
 ```
+
+
+Since P(A) and P(B|A) are binomaly distributed $A$ ~ $Bin(1000000,P(A_hat)=0.07)$, and $B|A=a$ ~ $Bin(100000,P(B|A)=0.071)$, the standard deviation can be calculated as npq/n
+
 sd.a<sd.b.a since P(B|A)>P(A), and SD of a binomial distribution is a monotonic increasing function with max(p)=0.5.
 
 
@@ -489,7 +494,7 @@ sd.a<sd.b.a since P(B|A)>P(A), and SD of a binomial distribution is a monotonic 
 
 In this question we compare and visualize the trends in terms of numbers of COVID-19 `cases` and `deaths` for different world countries during the pandemic. 
 
-
+# Q2a
 
 a. Read the COVID-19 dataset file `WHO-COVID-19-global-data.csv` from the [World's Health Organization](https://covid19.who.int/?gclid=Cj0KCQjwudb3BRC9ARIsAEa-vUuF5yzpzQUOyxXJvgsXDE6koerrpqO7go0BPBTylJbYh_fPSaYaMWUaAhNlEALw_wcB) webpage into an $R$ data-frame.
 
@@ -511,7 +516,7 @@ head(df)
 tail(df)
 
 ```
-
+# Q2b
 
 
 b. In this sub-question and the next one, we're interested in plotting the COVID-19 trends in `Israel` and its neighbors. 
@@ -551,6 +556,8 @@ cumdeaths_bycountry_graph<-ggplot(df[df$Country %in% neighboring_EMRO,], aes(x =
 cumdeaths_bycountry_graph
 
 ```
+\n
+# Q2c
 c. Load the economic dataset available in moodle in the file `economic_data.csv` with demographic and economic information on world countries. 
 
 Merge the two data-frames such that the new data-frame will keep the information in the COVID-19 data-frame, yet will also contain for each row the total population of each country in $2018$. 
@@ -628,13 +635,15 @@ specific_country_deaths <- merged_df %>%
   arrange(desc(Max_Cumulative_Deaths)) %>%
   distinct()
 
-specific_country_deaths
+print(specific_country_deaths)
 
 
 ```
 
 With regards to absolute numbers, Iran is the great "winner" here - with 146297 max deaths. That number is objectively larger than its successor, Iraq, which has 25375 reported deaths. That is a 120922 difference, and a 576% scale difference. It is also worth to mention that Iraq's and Iran's communication with the western world is less trustworthy than Israel's or Jordan's. We can assume the numbers are even greater than the reported. 
+\n
 
+# Q2d
 
 d. One measure of the healthcare system strength in a country is the ratio between the number of deaths and the number of cases (with the caveats that this number is affected by other things like
 
@@ -653,7 +662,7 @@ latest_data <- merge(latest_cases, latest_deaths, by = "Country")
 latest_data<- latest_data[-c(30,54,174),] 
 ```
 
-I removed Erithrea and Turkmenistan, that had NaN values. Burundi had cumulative deaths per 1m < 1, which pointed as an outlier on the graph. According to Wikipedia, _"Burundi is the poorest country in the world as per GDP per capita, and is one of the least developed countries, facing widespread poverty, corruption, instability, authoritarianism, and illiteracy."_ It is safe to presume the reported numbers are inaccurate, and not to be compare to.
+I removed Erithrea and Turkmenistan, that had NaN values. Burundi had cumulative deaths per 1m < 1, which pointed as an outlier on the graph. According to Wikipedia, _"Burundi is the poorest country in the world as per GDP per capita, and is one of the least developed countries, facing widespread poverty, corruption, instability, authoritarianism, and illiteracy."_ It is safe to presume the reported numbers are inaccurate, and not to be compare to. Thus, Burundi was removed.
 
 ```{r}
 colnames(latest_data) <- c("Country", "Cumulative_Cases_per1m", "Cumulative_Deaths_per1m")
@@ -710,12 +719,12 @@ skew<-round(skewness(fatality_data$Fatality_Rate),3)
 
 The distribution is not symmetric. According to the code above, we can see that the proportion of observations above the mean is 0.575 \n
 Raw data:
-Mean: 0.565;\n
-Median: 0.581;\n
-Skewness: -0.75;\n 
-Since the Median is greater than the Mean, we can define the graph as moderately  positively skewed.\n\n\n
+Mean: 0.565; \n
+Median: 0.581; \n
+Skewness: -0.75; \n 
+Since the Median is greater than the Mean, we can define the graph as moderately  positively skewed. \n \n \n
 
-
+# Q2e
 e. Find the countries suffering the highest number of deaths by COVID-19, i.e. those with $>200,000$ cumulative number of `deaths`.
 
 For these countries, plot the `smoothed` number of `new` daily cases. 
@@ -729,8 +738,11 @@ Which countries were hit earliest/latest by the pandemic?
 Is there a different in the number of waves suffered by each country? 
 
 
-```{r}
-most_suffered<- subset(df, Cumulative_deaths>200000) 
+```{r,message=FALSE}
+most_suffered <- merged_df %>%
+  group_by(Country) %>%
+  filter(max(Cumulative_deaths) > 200000) %>%
+  ungroup()
 
 ggplot(most_suffered, aes(x = Date, y = New_cases, color = Country)) +
   geom_smooth() +
@@ -751,6 +763,7 @@ Countries like Mexico exhibit a fairly smooth graph - no major peaks at any time
 
 Overall, the curves highlight the diverse and complex nature of the COVID-19 pandemic across different countries, emphasizing the importance of tailored approaches in combating the virus and reducing its impact.
 
+# Q2f
 
 
 f. Plot the new  number of `cases` and `death` as a function of the date in each of the six `WHO_regions`: `EMRO`,  `EURO`,  `AFRO`,  `WPRO`,  `AMRO`,  `SEARO` (filter `Others`), in two separate plots (each region in a different color). Describe the results. <br>
@@ -781,11 +794,12 @@ ggplot(merged_df[merged_df$New_deaths >= 0, ], aes(x = Date, y = New_deaths, col
   theme_minimal()
 
 ```
+
 ! I only display dates with New Deaths >=0
 
 
 
-```{r}
+```{r,warning=FALSE}
 
 names(merged_df)[13]<-"pop65"
 
@@ -797,7 +811,13 @@ ggplot(merged_df, aes(x = GDP_per_capita, color = WHO_region)) +
   labs(x = "GDP per Capita", y = "Empirical CDF", title = "Empirical CDF of GDP per Capita by WHO Region") +
   scale_color_discrete(name = "WHO Region") +
   theme_minimal()
+```
 
+The graph presents the ECDF function for GDP per capita by WHO region. Countries with less steep steps, meaning located further on the right-hand of the graph, are with a higher cumulative probability to have a higher GDP score. The empirical cumulative distribution function (ECDF) plot of GDP per capita across different WHO regions shows that the EURO region is skewed towards higher values, indicating a higher concentration of countries with higher GDP per capita compared to other regions. This suggests that the EURO region has a relatively larger proportion of countries with a higher economic prosperity level compared to other regions.
+
+
+
+```{r, warning=FALSE}
 # Plot percentage of population above 65 (pop65) by WHO region
 ggplot(merged_df, aes(x = pop65, color = WHO_region)) +
   stat_ecdf(geom = "step") +
@@ -808,4 +828,5 @@ ggplot(merged_df, aes(x = pop65, color = WHO_region)) +
 
 ```
 
+The positioning of the curve on the empirical cumulative distribution function (ECDF) plot reflects the cumulative probability of higher percentages of the population above 65 years old. Regions with curves located further to the right have a higher likelihood of having a larger proportion of the population in the older age group. In the case of the EURO region, its curve is positioned towards the right, indicating a higher cumulative probability for higher percentages of the population above 65 years old, suggesting a higher proportion of older individuals in that region compared to others. This checks out with reality - countries with higher GDP per capita, have better healthcare, and a longer lifespan.
 
